@@ -1,0 +1,55 @@
+item {
+  id: 1
+  name: 'stop'
+}
+
+item {
+  id: 2
+  name: '30'
+}
+
+item {
+  id: 3
+  name: '60'
+}
+
+item {
+  id: 4
+  name: 'ceda'
+}
+
+item {
+  id: 5
+  name: 'luces'
+}
+
+item {
+  id: 6
+  name: 'obras'
+}
+
+item {
+  id: 7
+  name: 'recto'
+}
+
+item {
+  id: 8
+  name: 'izq'
+}
+
+item {
+  id: 9
+  name: 'der'
+}
+
+item {
+  id: 10
+  name: 'verde'
+}
+
+item {
+  id: 11
+  name: 'rojo'
+}
+

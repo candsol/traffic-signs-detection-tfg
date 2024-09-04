@@ -1,0 +1,11 @@
+stop
+30
+60
+ceda
+luces
+obras
+recto
+izq
+der
+verde
+rojo
