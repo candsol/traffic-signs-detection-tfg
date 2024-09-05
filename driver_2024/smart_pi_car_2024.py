@@ -190,6 +190,7 @@ class SmartPiCar(object):
         elif mode == "entrenamiento_auto":
             logging.info("Iniciando la conducción autónoma y capturando frames...")
             logging.info(f"Arrancando a una velocidad de {speed}...")
+            os.chdir('../footage')
 
             while self.camera.isOpened():
                 
