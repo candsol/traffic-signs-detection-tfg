@@ -110,41 +110,32 @@ class TrafficSignDetector(object):
         input_frame = img_preprocess(frame, signal = True)
         common.set_input(self.interpreter, input_frame)
         
-        #input_details = self.interpreter.get_input_details()
-        #self.interpreter.set_tensor(input_details[0]['index'], input_frame)
         output_details = self.interpreter.get_output_details()
         #start = time.time()
         self.interpreter.invoke()
         #end = time.time()
         #logging.info(end-start)
-        # Retrieve detection results
+
         boxes = self.interpreter.get_tensor(output_details[1]['index'])[0]
         classes = self.interpreter.get_tensor(output_details[3]['index'])[0]
         scores = self.interpreter.get_tensor(output_details[0]['index'])[0]
         
         detections = []
 
-        # Loop over all detections and draw detection box if confidence is above minimum threshold
         for i in range(len(scores)):
-        #    if ((scores[i] > self.threshold)): '(scores[0] > self.threshold)'
             if ((scores[i] > self.threshold)):  
                 object_name = self.labels[int(classes[i])] 
                 detections.append([object_name, scores[i], boxes[i], int(classes[i])])
                 
-            
         signal_detected = 'Nada'   
         
-        #logging.info(scores)
-        
         if(len(detections)>0):
-            #for i in range(len(detections)):
             signal_detected = detections[0][0]
             logging.debug(signal_detected)
             logging.debug(detections[0])
             
             signal = self.traffic_objects[int(detections[0][3])]
-            #logging.info(detections[0][0])
-            #logging.info(detections[0][1])
+
             if signal.esta_cerca(detections[0]):
                 logging.debug('La señal está cerca, interpretándola...')
                 signal.play(self.car)

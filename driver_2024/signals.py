@@ -1,7 +1,6 @@
 import logging
 import time
 from blinkstick import blinkstick
-from luces import *
 
 class Signal(object):
 
@@ -10,9 +9,9 @@ class Signal(object):
 
     @staticmethod
     def esta_cerca(signal_detected):
-        signal_detected_height = (signal_detected[2][3] - signal_detected[2][1]) * 100
+        signal_detected_height = (signal_detected[2][2] - signal_detected[2][0]) * 100
         
-        return signal_detected_height / 320 > 0
+        return signal_detected_height / 320 > 0.1
 
 
 class Stop(Signal):
@@ -169,8 +168,7 @@ class Izquierda(Signal):
             car.keep_following = True
         
         else:  self.intermitentes(time.time() + 5)
-        
-        
+            
         
 class Derecha(Signal):
 
@@ -232,27 +230,47 @@ class Derecha(Signal):
             car.keep_following = True
         
         else: self.intermitentes(time.time() + 5)
-            
-        
+              
                      
 class Rojo(Signal):
 
     def play(self, car):
         logging.debug('Parando por SEMÁFORO ROJO...')
         
+        bstick = blinkstick.find_first()
+        if bstick:
+            for i in range(4):
+                bstick.set_color(channel=0, index=i, name="red")
+        
         car.keep_following = False
         car.back_wheels.speed = 0
         
         time.sleep(3)
+        
+        if bstick:
+            for i in range(4):
+                bstick.set_color(channel=0, index=i, name="black")
         
         
 class Verde(Signal):
 
     def play(self, car):
         logging.debug('Continuando conducción por SEMÁFORO VERDE...')      
+        
+        bstick = blinkstick.find_first()
+        if bstick:
+            for i in range(4):
+                bstick.set_color(channel=0, index=i, name="green")
+        
         vel = car.back_wheels._speed
         
         if(vel==0):
             car.back_wheels.speed = 20
             
         car.keep_following = True
+        
+        time.sleep(3)
+        
+        if bstick:
+            for i in range(4):
+                bstick.set_color(channel=0, index=i, name="black")

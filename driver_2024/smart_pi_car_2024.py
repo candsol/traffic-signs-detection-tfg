@@ -15,7 +15,6 @@ import os
 import time
 import traceback
 from autonomous_driver_2024 import LaneFollower, TrafficSignDetector
-from hand_coded_lane_follower import HandCodedLaneFollower
 import threading
 
 #mode = 'auto'
@@ -65,22 +64,11 @@ class SmartPiCar(object):
         
         self.lane_follower = LaneFollower(self)
         self.traffic_sign_detector = TrafficSignDetector(self)
-        self.hand_coded_lane_follower = HandCodedLaneFollower(self)
-        
-        ''' # Graba video
-        self.fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        self.date_str = datetime.datetime.now().strftime("%y%m%d-%H%M%S")
-        self.video = cv2.VideoWriter('../footage/car-video-%s.avi' % self.date_str,
-                                     self.fourcc,
-                                     20.0,
-                                     (self.camera_width, self.camera_height))'''
         
         logging.info("Smart Pi Car creado con éxito.")
 
-
     def __enter__(self):
         return self
-
 
     def __exit__(self, exc_type, exc_value, traceback):
         if traceback is not None:
@@ -92,14 +80,12 @@ class SmartPiCar(object):
 
         self.cleanup()
 
-
     def cleanup(self):
         """ Resetea el hardware """
         logging.info("Parando el coche, restaurando el hardware...")
         self.back_wheels.speed = 0
         self.front_wheels.turn(self.STRAIGHT_ANGLE)
         self.camera.release()
-        #self.video.release()
         
         self.keep_following = False
         self.keep_detecting = False
@@ -107,7 +93,6 @@ class SmartPiCar(object):
         cv2.destroyAllWindows()
         logging.info("Coche detenido.")
         sys.exit()
-
 
     def manual_driver(self):
         """ Conduce mediante las teclas A (derecha) y D (izquierda) """
@@ -133,47 +118,27 @@ class SmartPiCar(object):
         
         return False
 
-
-    def lane_detection_task(self):
-        while self.keep_following:
-            if(self.actual_frame is not None):
-                #frame = self.actual_frame
-     
-                img_lane = self.lane_follower.follow_lane(self.actual_frame)
-                
-                cv2.imshow('Lane Detection', img_lane)
-                
-            time.sleep(1)  # Ejecutar cada 1 segundo
-
-
     def traffic_sign_detection_task(self):
         while self.keep_detecting:
             if(self.actual_frame is not None):
-                #frame = self.actual_frame
-                #logging.info('flag')
                 #start = time.time()
                 logging.info('detecting...........................')
                 signal = self.traffic_sign_detector.detect_signal(self.actual_frame)
                 #end = time.time()
                 logging.info(signal)
                 #logging.info(end-start)
-                #print("Traffic Signal:", signal)
                 time.sleep(2) 
     
-    
     def start_detection_task(self):
-        #threading.Thread(target=self.lane_detection_task).start()
         threading.Thread(target=self.traffic_sign_detection_task).start()
 
-        
-    def drive(self, mode='auto', speed=20):
+    def drive(self, mode='auto', speed=30):
         """ Arranca el coche """
         
         self.back_wheels.speed = speed
         i = 0
         
         if mode == "auto":
-
             logging.info("Iniciando la conducción autónoma...")
             logging.info(f"Arrancando a una velocidad de {speed}...")
             
@@ -188,12 +153,6 @@ class SmartPiCar(object):
                     image_lane = self.lane_follower.follow_lane(self.actual_frame)
 
                 cv2.imshow('Video', image_lane)
-                
-                #signal = self.traffic_sign_detector.detect_signal(self.actual_frame)
-                #logging.info(signal)
-                # self.video.write(img_lane)
-                #time.sleep(1)
-                #i += 1
 
                 pressed_key = cv2.waitKey(1) & 0xFF
                 if pressed_key == ord('q'):
@@ -210,8 +169,6 @@ class SmartPiCar(object):
                     self.back_wheels.speed = speed
         
         elif mode == "entrenamiento_manual": 
-            #self.back_wheels.speed = 20
-            
             logging.info("Iniciando la conducción manual...")
             logging.info(f"Arrancando a una velocidad de {speed}...")
             os.chdir('../footage')
@@ -231,19 +188,17 @@ class SmartPiCar(object):
                 time.sleep(0.2)
 
         elif mode == "entrenamiento_auto":
-            # self.back_wheels.speed = 20
-
-            logging.info("Iniciando la conducción autónoma...")
+            logging.info("Iniciando la conducción autónoma y capturando frames...")
             logging.info(f"Arrancando a una velocidad de {speed}...")
 
             while self.camera.isOpened():
                 
                 _, self.actual_frame = self.camera.read()
-                # self.video.write(frame)
+
                 image_lane = self.actual_frame
                 
                 if(self.keep_following):
-                    image_lane = self.hand_coded_lane_follower.follow_lane(self.actual_frame)
+                    image_lane = self.lane_follower.follow_lane(self.actual_frame)
 
                 cv2.imshow('Video', image_lane)
                 
@@ -260,40 +215,27 @@ class SmartPiCar(object):
                     self.keep_detecting = True
                     self.back_wheels.speed = speed
 
+                cv2.imwrite('v%s-f%03d-a%03d.png' % (self.short_date_str, i, self.steering_angle), self.actual_frame)
+                logging.info(f"Frame {i} guardado")
                 i += 1
-            
+                time.sleep(2)
+                 
         else:
-            #self.back_wheels.speed = 20
-
             logging.info("Iniciando la conducción manual...")
             logging.info(f"Arrancando a una velocidad de {speed}...")
 
             while self.camera.isOpened():
-                # Get, write and show current frame
                 _, self.actual_frame = self.camera.read()
-                # self.video.write(frame)
+
                 cv2.imshow('Video', self.actual_frame)
 
                 _ = self.manual_driver()
-                
-                #i += 1
 
 
 def main(mode):
     with SmartPiCar() as car:
-        if mode == "auto":
-            car.drive(mode)
-        else:
-            car.drive(mode)
+        car.drive(mode)
             
-    '''try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        car.stop()'''
-            
-    
-
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(asctime)s: %(message)s')
@@ -301,10 +243,10 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         if sys.argv[1] not in ['manual', 'entrenamiento_manual','auto', 'entrenamiento_auto']:
             logging.error('Por favor, escriba el modo de conducción deseado después del nombre del programa.\n \
-- "manual": conducción mediante el teclado\n \
-- "auto": conducción autónoma mediante inteligencia artificial\n \
-- "entrenamiento_manual": conducción mediante el teclado recopilando datos\n \
-- "entrenamiento_auto": conducción autónoma (sin inteligencia artificial) recopilando datos')
+                            - "manual": conducción mediante el teclado\n \
+                            - "auto": conducción autónoma mediante inteligencia artificial\n \
+                            - "entrenamiento_manual": conducción mediante el teclado recopilando datos\n \
+                            - "entrenamiento_auto": conducción autónoma (sin inteligencia artificial) recopilando datos')
             sys.exit()
         else: main(sys.argv[1])
 
